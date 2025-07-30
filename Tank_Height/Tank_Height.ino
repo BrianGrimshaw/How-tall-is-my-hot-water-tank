@@ -227,13 +227,7 @@ void loop()
           frame[7][6] = 0;
           frame[7][7] = 0;
           samples++;
-          if (waterRunning) // Water running, start again
-          {
-            state = 1;
-            logBuffer[logIndex] = -state;
-            logIndex++;
-          }
-          else if (diff >= DIFF_TAP_CLOSED) // Tap closed, go to waiting
+          if (diff >= DIFF_TAP_CLOSED) // Tap closed, go to wait until stable
           {
             state = 3;
             logBuffer[logIndex] = -state;
@@ -252,13 +246,7 @@ void loop()
           frame[7][6] = 1;
           frame[7][7] = 0;
           samples++;
-          if (waterRunning) // Water running, start again
-          {
-            state = 1;
-            logBuffer[logIndex] = -state;
-            logIndex++;
-          }
-          else if (stable) // Stable readings now, call it full
+          if (stable) // Stable readings now, call it full
           {
             state = 4;
             logBuffer[logIndex] = -state;
