@@ -163,11 +163,12 @@ void loop()
         Serial.println("Recording stopped");
       }
       // Difference to check
-      dropDiff = prevReading[prevReadingSize - DROP_SAMPLES] - reading;
+      dropDiff = prevReading[DROP_SAMPLES - 1] - reading;
       if ((dropDiff > DROP_SIZE) && !startRecording)
       {
         startRecording = true;
         Serial.println("Recording started");
+        // Put the buffered data in the log
         for (int i = 0; i < prevReadingSize; i++)
         {
           logBuffer[logIndex + i] = prevReading[i];
@@ -175,8 +176,8 @@ void loop()
         logIndex += prevReadingSize;
         logCount = prevReadingSize;
       }
-      // Look for 3 negatives in a row to show that water is flowing
-      waterRunning = ((reading - prevReading[0]) < 0) && ((prevReading[0] - prevReading[1]) < 0) && ((prevReading[1] - prevReading[2]) < 0);
+      // Look for 3 negatives in a row after drop to show that water is flowing
+      waterRunning = (logCount >= (prevReadingSize + 3)) && ((reading - prevReading[0]) < 0) && ((prevReading[0] - prevReading[1]) < 0) && ((prevReading[1] - prevReading[2]) < 0);
       // Stable when five readings in a row where difference is small
       stable = ((reading - prevReading[0]) > -10) && ((reading - prevReading[0]) < 10) &&
               ((prevReading[0] - prevReading[1]) > -10) && ((prevReading[0] - prevReading[1]) < 10) &&
