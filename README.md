@@ -14,3 +14,15 @@ Magnet glued to pipe clamp<br>
 https://www.diy.com/departments/talon-natural-plastic-pipe-clip-dia-22mm-pack-of-5/5055332204201_BQ.prd
 
 I'd like the height to be available on the LAN, so used Arduino R4 Wifi<br>
+
+Wall bracket for sensor uses coach bolts as adjustable feet
+![IMG_2740](https://github.com/user-attachments/assets/70f0c40f-c208-4b0d-911b-80ad6ab77730)
+
+Hung from a convenient piece of wood
+![IMG_2741](https://github.com/user-attachments/assets/f2cd0837-8206-4f25-a7fc-f662361daef8)
+
+Magnet glued to pipe clip
+![IMG_2920](https://github.com/user-attachments/assets/7c343996-f1a7-4eb3-bd04-d1018a3a92e1)
+
+Sensor and magnet in place
+![IMG_2922](https://github.com/user-attachments/assets/22bf98c9-1cac-41d4-9ff5-b3bf98376b81)
