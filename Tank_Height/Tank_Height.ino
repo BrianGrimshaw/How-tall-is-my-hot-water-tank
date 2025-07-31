@@ -179,11 +179,11 @@ void loop()
       // Look for 3 negatives in a row after drop to show that water is flowing
       waterRunning = (logCount >= (prevReadingSize + 3)) && ((reading - prevReading[0]) < 0) && ((prevReading[0] - prevReading[1]) < 0) && ((prevReading[1] - prevReading[2]) < 0);
       // Stable when five readings in a row where difference is small
-      stable = ((reading - prevReading[0]) > -10) && ((reading - prevReading[0]) < 10) &&
-              ((prevReading[0] - prevReading[1]) > -10) && ((prevReading[0] - prevReading[1]) < 10) &&
-              ((prevReading[1] - prevReading[2]) > -10) && ((prevReading[1] - prevReading[2]) < 10) &&
-              ((prevReading[2] - prevReading[3]) > -10) && ((prevReading[2] - prevReading[3]) < 10) &&
-              ((prevReading[3] - prevReading[4]) > -10) && ((prevReading[3] - prevReading[4]) < 10);
+      stable = ((reading - prevReading[0]) > -20) && ((reading - prevReading[0]) < 20) &&
+              ((prevReading[0] - prevReading[1]) > -20) && ((prevReading[0] - prevReading[1]) < 20) &&
+              ((prevReading[1] - prevReading[2]) > -20) && ((prevReading[1] - prevReading[2]) < 20) &&
+              ((prevReading[2] - prevReading[3]) > -20) && ((prevReading[2] - prevReading[3]) < 20) &&
+              ((prevReading[3] - prevReading[4]) > -20) && ((prevReading[3] - prevReading[4]) < 20);
       stableAverage = (int)(((long)reading + (long)prevReading[0] + (long)prevReading[1] + (long)prevReading[2] + (long)prevReading[3]) / 5);
       // Difference to check
       diff = reading - prevReading[0];
@@ -217,7 +217,7 @@ void loop()
           else if (samples > MAX_SAMPLES)
           {
             state = 4;
-            logBuffer[logIndex] = -state;
+            logBuffer[logIndex] = -state - 10;
             logIndex++;
           }
           break;
@@ -236,7 +236,7 @@ void loop()
           else if (samples > MAX_SAMPLES)
           {
             state = 4;
-            logBuffer[logIndex] = -state;
+            logBuffer[logIndex] = -state - 20;
             logIndex++;
           }
           break;
@@ -272,11 +272,23 @@ void loop()
           else if (samples > MAX_SAMPLES)
           {
             state = 4;
+            logBuffer[logIndex] = -state - 30;
+            logIndex++;
+          }
+          break;
+        case 4: // Tank is now full, wait for recording to stop
+          frame[7][4] = 1;
+          frame[7][5] = 1;
+          frame[7][6] = 1;
+          frame[7][7] = 1;
+          if (!startRecording) // Wait for recording to stop
+          {
+            state = 5;
             logBuffer[logIndex] = -state;
             logIndex++;
           }
           break;
-        case 4: // Tank is now full, wait for charging OR drop
+        case 5: // Tank is now full, wait for drop
           frame[7][4] = 1;
           frame[7][5] = 1;
           frame[7][6] = 1;
