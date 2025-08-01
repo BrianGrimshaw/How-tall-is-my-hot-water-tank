@@ -1,4 +1,5 @@
 // 2025-07-11 Brian Grimshaw
+// Please enter your sensitive data in the Secret tab/arduino_secrets.h
 
 #include "Arduino_LED_Matrix.h"
 
@@ -8,13 +9,12 @@
 #define DROP_SAMPLES        3     // Look at previous samples to measure drop
 #define DIFF_TAP_CLOSED    50     // Tank gets more than this much taller wwhen tap closes
 #define STABLE_TOLERANCE   10     // Tolerance for stable after tap first opened
-#define MAX_SAMPLES        25     // Must have completed by this many samples
+#define MAX_SAMPLES        40     // Must have completed by this many samples
 #define EMPTY_OFFSET     2000     // Approx 1mm
 #define LOG_COUNT          50     // Log this many values each time
 
 #include "WiFiS3.h"
 
-///////please enter your sensitive data in the Secret tab/arduino_secrets.h
 #include "arduino_secrets.h" 
 char ssid[] = SECRET_SSID;        // your network SSID (name)
 char pass[] = SECRET_PASS;    // your network password (use for WPA, or use as key for WEP)
@@ -158,7 +158,7 @@ void loop()
       {
         startRecording = false;
         logCount = 0;
-        logBuffer[logIndex] = -999;
+        logBuffer[logIndex] = 0xFFFF;
         logIndex++;
         Serial.println("Recording stopped");
       }
@@ -168,10 +168,11 @@ void loop()
       {
         startRecording = true;
         Serial.println("Recording started");
-        // Put the buffered data in the log
-        for (int i = 0; i < prevReadingSize; i++)
+        // Put the buffered data in the log oldest first
+        int j = 0;
+        for (int i = prevReadingSize - 1; i >= 0; i--)
         {
-          logBuffer[logIndex + i] = prevReading[i];
+          logBuffer[logIndex + j++] = prevReading[i];
         }
         logIndex += prevReadingSize;
         logCount = prevReadingSize;
@@ -284,8 +285,6 @@ void loop()
           if (!startRecording) // Wait for recording to stop
           {
             state = 5;
-            logBuffer[logIndex] = -state;
-            logIndex++;
           }
           break;
         case 5: // Tank is now full, wait for drop
@@ -418,10 +417,10 @@ void loop()
             // Send log
             for (int j = 0; j < logIndex; j++)
             {
-              if (logBuffer[j] < -100)
+              if (logBuffer[j] == 0xFFFF)
               {
                 client.print("<p>");
-                client.print("New recording");
+                client.print("Recording stopped");
               }
               else
               {
