@@ -4,11 +4,11 @@
 #include "Arduino_LED_Matrix.h"
 
 #define CYCLE_TIME         50     // Sample time for reading analogue
-#define SAMPLE_TIME      5000     // Sample time to average analogue readings and for measring drop when tap first opened
+#define SAMPLE_TIME      5000     // Sample time (ms) to average analogue readings and for measring drop when tap first opened
 #define DROP_SIZE        1000     // Drop value to look for when tap first opened
 #define DROP_SAMPLES        3     // Look at previous samples to measure drop
 #define DIFF_TAP_CLOSED    50     // Tank gets more than this much taller wwhen tap closes
-#define STABLE_TOLERANCE   10     // Tolerance for stable after tap first opened
+#define STABLE_TOLERANCE   20     // Tolerance for stable after tap first opened
 #define MAX_SAMPLES        40     // Must have completed by this many samples
 #define EMPTY_OFFSET     2000     // Approx 1mm
 #define LOG_COUNT          50     // Log this many values each time
@@ -178,13 +178,13 @@ void loop()
         logCount = prevReadingSize;
       }
       // Look for 3 negatives in a row after drop to show that water is flowing
-      waterRunning = (logCount >= (prevReadingSize + 3)) && ((reading - prevReading[0]) < 0) && ((prevReading[0] - prevReading[1]) < 0) && ((prevReading[1] - prevReading[2]) < 0);
+      waterRunning = (logCount >= (prevReadingSize + 3)) && ((reading - prevReading[0]) < STABLE_TOLERANCE) && ((prevReading[0] - prevReading[1]) < STABLE_TOLERANCE) && ((prevReading[1] - prevReading[2]) < STABLE_TOLERANCE);
       // Stable when five readings in a row where difference is small
       stable = ((reading - prevReading[0]) > -20) && ((reading - prevReading[0]) < 20) &&
-              ((prevReading[0] - prevReading[1]) > -20) && ((prevReading[0] - prevReading[1]) < 20) &&
-              ((prevReading[1] - prevReading[2]) > -20) && ((prevReading[1] - prevReading[2]) < 20) &&
-              ((prevReading[2] - prevReading[3]) > -20) && ((prevReading[2] - prevReading[3]) < 20) &&
-              ((prevReading[3] - prevReading[4]) > -20) && ((prevReading[3] - prevReading[4]) < 20);
+              ((prevReading[0] - prevReading[1]) > -STABLE_TOLERANCE) && ((prevReading[0] - prevReading[1]) < STABLE_TOLERANCE) &&
+              ((prevReading[1] - prevReading[2]) > -STABLE_TOLERANCE) && ((prevReading[1] - prevReading[2]) < STABLE_TOLERANCE) &&
+              ((prevReading[2] - prevReading[3]) > -STABLE_TOLERANCE) && ((prevReading[2] - prevReading[3]) < STABLE_TOLERANCE) &&
+              ((prevReading[3] - prevReading[4]) > -STABLE_TOLERANCE) && ((prevReading[3] - prevReading[4]) < STABLE_TOLERANCE);
       stableAverage = (int)(((long)reading + (long)prevReading[0] + (long)prevReading[1] + (long)prevReading[2] + (long)prevReading[3]) / 5);
       // Difference to check
       diff = reading - prevReading[0];
@@ -297,6 +297,7 @@ void loop()
             state = 1;
             logBuffer[logIndex] = -state;
             logIndex++;
+            samples = 0;
           }
           break;
         default: // Start again
