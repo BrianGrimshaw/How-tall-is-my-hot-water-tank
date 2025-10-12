@@ -9,6 +9,8 @@
 #define DROP_SAMPLES        3     // Look at previous samples to measure drop
 #define DIFF_TAP_CLOSED    50     // Tank gets more than this much taller wwhen tap closes
 #define STABLE_TOLERANCE   20     // Tolerance for stable after tap first opened
+#define STABLE_SAMPLES      5     // Check 5 samples for stable
+#define RUNNING_SAMPLES     3     // Check 3 samples for tap running
 #define MAX_SAMPLES        40     // Must have completed by this many samples
 #define EMPTY_OFFSET     2000     // Approx 1mm
 #define LOG_COUNT          50     // Log this many values each time
@@ -147,6 +149,14 @@ void loop()
       reading = sampleTotal / sampleCount;
       sampleCount = 0;
       sampleTotal = 0;
+
+      // Shift up the array of previous readings
+      for (int i = (sizeof(prevReading) / sizeof(prevReading[0])) - 1; i > 0; i--)
+      {
+        prevReading[i] = prevReading[i - 1];
+      }
+      prevReading[0] = reading;
+
       // Log data
       if (startRecording && (logIndex < logBufferSize) && (logCount < LOG_COUNT))
       {
@@ -163,7 +173,7 @@ void loop()
         Serial.println("Recording stopped");
       }
       // Difference to check
-      dropDiff = prevReading[DROP_SAMPLES - 1] - reading;
+      dropDiff = prevReading[DROP_SAMPLES] - reading;
       if ((dropDiff > DROP_SIZE) && !startRecording)
       {
         startRecording = true;
@@ -177,17 +187,24 @@ void loop()
         logIndex += prevReadingSize;
         logCount = prevReadingSize;
       }
-      // Look for 3 negatives in a row after drop to show that water is flowing
-      waterRunning = (logCount >= (prevReadingSize + 3)) && ((reading - prevReading[0]) < STABLE_TOLERANCE) && ((prevReading[0] - prevReading[1]) < STABLE_TOLERANCE) && ((prevReading[1] - prevReading[2]) < STABLE_TOLERANCE);
+      // Look for 3 negatives (or small positive) in a row after drop to show that water is flowing
+      // Note: three negatives between four readings
+      if (logCount >= (prevReadingSize + 3)) waterRunning = 1;
+      for (int i = 1; i <= RUNNING_SAMPLES; i++)
+      {
+        if ((prevReading[i] - prevReading[i - 1]) > STABLE_TOLERANCE) waterRunning = 0;
+      }
       // Stable when five readings in a row where difference is small
-      stable = ((reading - prevReading[0]) > -20) && ((reading - prevReading[0]) < 20) &&
-              ((prevReading[0] - prevReading[1]) > -STABLE_TOLERANCE) && ((prevReading[0] - prevReading[1]) < STABLE_TOLERANCE) &&
-              ((prevReading[1] - prevReading[2]) > -STABLE_TOLERANCE) && ((prevReading[1] - prevReading[2]) < STABLE_TOLERANCE) &&
-              ((prevReading[2] - prevReading[3]) > -STABLE_TOLERANCE) && ((prevReading[2] - prevReading[3]) < STABLE_TOLERANCE) &&
-              ((prevReading[3] - prevReading[4]) > -STABLE_TOLERANCE) && ((prevReading[3] - prevReading[4]) < STABLE_TOLERANCE);
-      stableAverage = (int)(((long)reading + (long)prevReading[0] + (long)prevReading[1] + (long)prevReading[2] + (long)prevReading[3]) / 5);
-      // Difference to check
-      diff = reading - prevReading[0];
+      stable = 1;
+      long ave = 0;
+      for (int i = 1; i < STABLE_SAMPLES; i++)
+      {
+        if (abs(prevReading[i] - prevReading[i - 1]) > STABLE_TOLERANCE) stable = 0;
+        ave += prevReading[i - 1];
+      }
+      stableAverage = (int)(ave / STABLE_SAMPLES);
+      // Difference to check for tap closing
+      diff = prevReading[0] - prevReading[2];
       switch (state)
       {
         case 0: // Power on - wait for drop when tap first opened
@@ -304,13 +321,6 @@ void loop()
           state = 0;
           break;
       }
-      // Shift up the array of previous readings
-      for (int i = (sizeof(prevReading) / sizeof(prevReading[0])) - 1; i > 0; i--)
-      {
-        prevReading[i] = prevReading[i - 1];
-      }
-      prevReading[0] = reading;
-
       empty = full - EMPTY_OFFSET;
 
       // Send reading to terminal window
