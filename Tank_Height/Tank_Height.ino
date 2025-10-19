@@ -200,8 +200,10 @@ void loop()
       for (int i = 1; i < STABLE_SAMPLES; i++)
       {
         if (abs(prevReading[i] - prevReading[i - 1]) > STABLE_TOLERANCE) stable = 0;
-        ave += prevReading[i - 1];
+        ave += prevReading[i];
       }
+      // Need to add the first one as the loop stops one short
+      ave += prevReading[0];
       stableAverage = (int)(ave / STABLE_SAMPLES);
       // Difference to check for tap closing
       diff = prevReading[0] - prevReading[2];
