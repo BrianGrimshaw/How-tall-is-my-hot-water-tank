@@ -12,9 +12,9 @@
 #define STABLE_SAMPLES      5     // Check 5 samples for stable
 #define RUNNING_SAMPLES     3     // Check 3 samples for tap running
 #define MAX_SAMPLES        40     // Must have completed by this many samples
-#define EMPTY_OFFSET     2000     // Approx 1mm
 #define LOG_COUNT          50     // Log this many values each time
-
+#define M_EMPTY           0.71    // m and c for working out what value represents empty tank
+#define C_EMPTY          2429.0
 #include "WiFiS3.h"
 
 #include "arduino_secrets.h" 
@@ -29,7 +29,7 @@ int state = 0;                    // 0 = heated, 1 = tap opened, 2 = wait for st
 int full = 15000; // Full tank value - all hot
 int prevFull[] = {0,0,0,0,0}; // 
 long fullAverage = 0;
-int empty = full - EMPTY_OFFSET;  // Empty tank value - all cold
+int empty = (int)(((float)full * M_EMPTY) + C_EMPTY);  // Empty tank value - all cold
 int sampleCount = 0;    // Counter for averaging samples
 int sampleTotal = 0;    // Contains total for average
 int reading = 0;        // Averaged reading
@@ -283,7 +283,7 @@ void loop()
             fullAverage += (long)prevFull[0];
             // Average full over a few fulls
             full = (int)(fullAverage / (sizeof(prevFull) / sizeof(prevFull[0])));         // Full tank value - all hot
-            empty = full - EMPTY_OFFSET;  // Empty tank value - all cold
+            empty = full - (int)(((float)full * M_EMPTY) + C_EMPTY);  // Empty tank value - all cold
             logBuffer[logIndex] = -full;
             logIndex++;
             logBuffer[logIndex] = -empty;
@@ -323,7 +323,7 @@ void loop()
           state = 0;
           break;
       }
-      empty = full - EMPTY_OFFSET;
+      empty = (int)(((float)full * M_EMPTY) + C_EMPTY);
 
       // Send reading to terminal window
       itoa(reading, readingStr, 10);
