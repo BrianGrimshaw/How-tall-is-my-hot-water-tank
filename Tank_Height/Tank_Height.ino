@@ -5,7 +5,8 @@
 
 #define CYCLE_TIME         50     // Sample time for reading analogue
 #define SAMPLE_TIME      5000     // Sample time (ms) to average analogue readings and for measring drop when tap first opened
-#define DROP_SIZE        1000     // Drop value to look for when tap first opened
+#define DROP_M          0.337     // Drop value m and c from start value
+#define DROP_C          -4056
 #define DROP_SAMPLES        3     // Look at previous samples to measure drop
 #define DIFF_TAP_CLOSED    50     // Tank gets more than this much taller wwhen tap closes
 #define STABLE_TOLERANCE   20     // Tolerance for stable after tap first opened
@@ -174,7 +175,8 @@ void loop()
       }
       // Difference to check
       dropDiff = prevReading[DROP_SAMPLES] - reading;
-      if ((dropDiff > DROP_SIZE) && !startRecording)
+      // Drop depends on how close the sensor is to the magnet
+      if ((dropDiff > (int)(((float)prevReading[DROP_SAMPLES] * DROP_M) + DROP_C)) && !startRecording)
       {
         startRecording = true;
         Serial.println("Recording started");
