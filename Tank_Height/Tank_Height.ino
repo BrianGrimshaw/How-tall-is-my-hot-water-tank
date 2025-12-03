@@ -5,8 +5,8 @@
 
 #define CYCLE_TIME         50     // Sample time for reading analogue
 #define SAMPLE_TIME      5000     // Sample time (ms) to average analogue readings and for measring drop when tap first opened
-#define DROP_M          0.337     // Drop value m and c from start value
-#define DROP_C          -4056     // Fixed drop height doesn't work well with variable magnet to sensor distance
+#define DROP_M            0.5     // Drop value m and c from start value
+#define DROP_C          -6700     // Fixed drop height doesn't work well with variable magnet to sensor distance
 #define DROP_SAMPLES        3     // Look at previous samples to measure drop
 #define DIFF_TAP_CLOSED    50     // Tank gets more than this much taller wwhen tap closes
 #define STABLE_TOLERANCE   20     // Tolerance for stable after tap first opened
