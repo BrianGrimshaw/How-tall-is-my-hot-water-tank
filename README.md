@@ -26,3 +26,6 @@ Magnet glued to pipe clip
 
 Sensor and magnet in place
 ![IMG_2922](https://github.com/user-attachments/assets/22bf98c9-1cac-41d4-9ff5-b3bf98376b81)
+
+Arduino R4 wifi with the LED matrix to display remaining hot water
+![IMG_4221](https://github.com/user-attachments/assets/99762364-fa67-4d2a-b295-aadb2a31c529)
