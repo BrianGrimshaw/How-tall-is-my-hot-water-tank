@@ -7,6 +7,7 @@
 #define SAMPLE_TIME      5000     // Sample time (ms) to average analogue readings and for measring drop when tap first opened
 #define DROP_M            0.5     // Drop value m and c from start value
 #define DROP_C          -6700     // Fixed drop height doesn't work well with variable magnet to sensor distance
+#define DROP_MIN          800     // Minimu value for drop calc. Without this, it detects all the way down when the tank is emptying. Probably should think of a better idea
 #define DROP_SAMPLES        3     // Look at previous samples to measure drop
 #define DIFF_TAP_CLOSED    50     // Tank gets more than this much taller wwhen tap closes
 #define STABLE_TOLERANCE   20     // Tolerance for stable after tap first opened
@@ -51,6 +52,8 @@ int logIndex = 0;
 int logCount = 0;
 int logBuffer[1000];
 int logBufferSize = sizeof(logBuffer) / sizeof(logBuffer[0]);
+// Log buffer size for comparisons so we don't fall off the end
+int logBufferSizeC = logBufferSize - 1;
 
 ArduinoLEDMatrix matrix;
 
@@ -159,24 +162,24 @@ void loop()
       prevReading[0] = reading;
 
       // Log data
-      if (startRecording && (logIndex < logBufferSize) && (logCount < LOG_COUNT))
+      if (startRecording && (logIndex < logBufferSizeC) && (logCount < LOG_COUNT))
       {
-        logBuffer[logIndex] = reading;
+        if (logIndex < logBufferSizeC) logBuffer[logIndex++] = reading;
         logCount++;
-        logIndex++;
       }
       else if ((logIndex >= logBufferSize) || (logCount >= LOG_COUNT))
       {
         startRecording = false;
         logCount = 0;
-        logBuffer[logIndex] = 0xFFFF;
-        logIndex++;
+        if (logIndex < logBufferSizeC) logBuffer[logIndex++] = 0xFFFF;
         Serial.println("Recording stopped");
       }
       // Difference to check
       dropDiff = prevReading[DROP_SAMPLES] - reading;
       // Drop depends on how close the sensor is to the magnet
-      if ((dropDiff > (int)(((float)prevReading[DROP_SAMPLES] * DROP_M) + DROP_C)) && !startRecording)
+      int dropComp = (int)(((float)prevReading[DROP_SAMPLES] * DROP_M) + DROP_C);
+      if (dropComp < DROP_MIN) dropComp = DROP_MIN;
+      if ((dropDiff > dropComp) && !startRecording)
       {
         startRecording = true;
         Serial.println("Recording started");
@@ -184,7 +187,7 @@ void loop()
         int j = 0;
         for (int i = prevReadingSize - 1; i >= 0; i--)
         {
-          logBuffer[logIndex + j++] = prevReading[i];
+          if (logIndex < logBufferSizeC) logBuffer[logIndex + j++] = prevReading[i];
         }
         logIndex += prevReadingSize;
         logCount = prevReadingSize;
@@ -219,8 +222,7 @@ void loop()
           if (startRecording) // Drop detected when recoring started
           {
             state = 1;
-            logBuffer[logIndex] = -state;
-            logIndex++;
+            if (logIndex < logBufferSizeC) logBuffer[logIndex++] = -state;
             samples = 0;
           }
           break;
@@ -233,14 +235,12 @@ void loop()
           if (waterRunning)
           {
             state = 2;
-            logBuffer[logIndex] = -state;
-            logIndex++;
+            if (logIndex < logBufferSizeC) logBuffer[logIndex++] = -state;
           }
           else if (samples > MAX_SAMPLES)
           {
             state = 4;
-            logBuffer[logIndex] = -state - 10;
-            logIndex++;
+            if (logIndex < logBufferSizeC) logBuffer[logIndex++] = -state - 10;
           }
           break;
         case 2: // Check for difference to swing positive when tap closed
@@ -252,14 +252,12 @@ void loop()
           if (diff >= DIFF_TAP_CLOSED) // Tap closed, go to wait until stable
           {
             state = 3;
-            logBuffer[logIndex] = -state;
-            logIndex++;
+            if (logIndex < logBufferSizeC) logBuffer[logIndex++] = -state;
           }
           else if (samples > MAX_SAMPLES)
           {
             state = 4;
-            logBuffer[logIndex] = -state - 20;
-            logIndex++;
+            if (logIndex < logBufferSizeC) logBuffer[logIndex++] = -state - 20;
           }
           break;
         case 3: // Wait until stable
@@ -271,8 +269,7 @@ void loop()
           if (stable) // Stable readings now, call it full
           {
             state = 4;
-            logBuffer[logIndex] = -state;
-            logIndex++;
+            if (logIndex < logBufferSizeC) logBuffer[logIndex++] = -state;
 
             // Shift up the array of previous fulls and average them on the way
             fullAverage = 0;
@@ -286,16 +283,13 @@ void loop()
             // Average full over a few fulls
             full = (int)(fullAverage / (sizeof(prevFull) / sizeof(prevFull[0])));         // Full tank value - all hot
             empty = full - (int)(((float)full * M_EMPTY) + C_EMPTY);  // Empty tank value - all cold
-            logBuffer[logIndex] = -full;
-            logIndex++;
-            logBuffer[logIndex] = -empty;
-            logIndex++;
+            if (logIndex < logBufferSizeC) logBuffer[logIndex++] = -full;
+            if (logIndex < logBufferSizeC) logBuffer[logIndex++] = -empty;
           }
           else if (samples > MAX_SAMPLES)
           {
             state = 4;
-            logBuffer[logIndex] = -state - 30;
-            logIndex++;
+            if (logIndex < logBufferSizeC) logBuffer[logIndex++] = -state - 30;
           }
           break;
         case 4: // Tank is now full, wait for recording to stop
@@ -316,8 +310,7 @@ void loop()
           if (startRecording) // Drop detected when recoring started
           {
             state = 1;
-            logBuffer[logIndex] = -state;
-            logIndex++;
+            if (logIndex < logBufferSizeC) logBuffer[logIndex++] = -state;
             samples = 0;
           }
           break;
@@ -351,7 +344,6 @@ void loop()
       matrix.renderBitmap(frame, 8, 12);
     }
     
-
     // Work out percentage hot and bargraph
     // y = 0.3003x - 100 from defaults - thanks Excel
     float m = (100.0 - 0.0) / (float)(full - empty);
@@ -430,7 +422,7 @@ void loop()
             client.print("...");
             client.print(hotStr);
             // Send log
-            for (int j = 0; j < logIndex; j++)
+            for (int j = 0; j < (logIndex < logBufferSize)? logIndex : logBufferSize; j++)
             {
               if (logBuffer[j] == 0xFFFF)
               {
