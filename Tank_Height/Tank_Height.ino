@@ -422,25 +422,26 @@ void loop()
             client.print("...");
             client.print(hotStr);
             // Send log
-            for (int j = 0; j < (logIndex < logBufferSize)? logIndex : logBufferSize; j++)
+            client.print("<br>");
+            int k = (logIndex < logBufferSize)? logIndex : logBufferSize - 1;
+            for (int j = 0; j < k; j++)
             {
               if (logBuffer[j] == 0xFFFF)
               {
-                client.print("<p>");
                 client.print("Recording stopped");
+                client.print("<br>");
               }
               else
               {
                 itoa(logBuffer[j], logStr, 10);
-                client.print("<p>");
                 client.print(logStr);
+                client.print("<br>");
               }
-              client.print("</p>");
             }
+            client.print("</p>");
             // Start log again
             logIndex = 0;
             memset(&logBuffer, 0, sizeof(logBuffer));
-            client.print("</p>");
             
             // The HTTP response ends with another blank line:
             client.println();
