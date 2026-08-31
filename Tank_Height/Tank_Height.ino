@@ -1,5 +1,23 @@
-// 2025-07-11 Brian Grimshaw
+// Use height of hot water tank to estimate how much of the water is hot
+// Copyright (C) 2026  Brian Grimshaw
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see https://www.gnu.org/licenses
+
 // Please enter your sensitive data in the Secret tab/arduino_secrets.h
+
+// Note: I'm not really happy with this project
+// It seemd like a good idea at the time, and it is if all you want is an estimate, but was hoping it would be more accurate
 
 #include "Arduino_LED_Matrix.h"
 
